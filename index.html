@@ -836,6 +836,7 @@ function formatStudentDate(){
   return {weekday:weekdays[d.getDay()], date:`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`};
 }
 function renderStudent(id,workoutId=null){
+  const logo_uri = document.querySelector('.brand-photo')?.src || '';
   window.currentStudentId=id;
   window.currentWorkoutId=workoutId;
   const s=db.students.find(x=>x.id===id);
@@ -871,7 +872,7 @@ function renderStudent(id,workoutId=null){
   const introSlide=`<div class="exercise-slide">
     <div class="student-card welcome-slide">
       <div class="welcome-date">${dt.date} · ${dt.weekday}</div>
-      <div class="welcome-logo"><img src="${logo_uri}" alt="Academia Alta Definição HD"></div>
+      <div class="welcome-logo">${logo_uri ? `<img src="${logo_uri}" alt="Academia Alta Definição HD">` : `<div style="font-weight:900;color:#168fd1;font-size:18px">HD</div>`}</div>
       <div class="muted">TREINO DE HOJE</div>
       <h1 style="font-size:30px;line-height:1.08;margin:8px 0 12px">Bora começar o treino de ${dt.weekday}?</h1>
       <h2 style="margin:0 0 8px">${esc(s.name.split(' ')[0])}, vamos nessa! 💪</h2>
