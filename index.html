@@ -458,7 +458,7 @@ a{color:#087ebc}
 <div class="field"><label>Nome profissional</label><input id="cfgName"></div><div class="field"><label>Nome da empresa/academia</label><input id="cfgCompany"></div>
 <div class="field"><label>WhatsApp</label><input id="cfgPhone"></div><div class="field"><label>Instagram</label><input id="cfgInstagram"></div>
 <div class="field"><label>Cor principal</label><input id="cfgColor" type="color"></div><div class="field"><label>Texto no topo do aluno</label><input id="cfgWelcome"></div>
-<div class="field full"><label>Observação / apresentação</label><textarea id="cfgBio"></textarea></div></div><div class="actions"><button class="btn primary" onclick="saveConfig()">Salvar identidade</button></div></div><div class="panel" style="margin-top:16px"><div class="ph"><h2>💾 Backup do aplicativo</h2></div><p class="muted">Exporte alunos, treinos, exercícios, imagens offline, vídeos, pagamentos e configurações. O arquivo pode ser guardado no computador ou em um pendrive.</p><div class="actions"><button class="btn primary" onclick="exportBackup()">⬇️ Fazer backup</button><button class="btn" onclick="document.getElementById('backupFile').click()">⬆️ Restaurar backup</button><input id="backupFile" type="file" accept="application/json,.json" style="display:none" onchange="importBackup(this)"></div><div class="file-note">A restauração substitui os dados atuais pelos dados do arquivo escolhido.</div></div></section>
+<div class="field full"><label>Observação / apresentação</label><textarea id="cfgBio"></textarea></div></div><div class="actions"><button class="btn primary" onclick="saveConfig()">Salvar identidade</button></div></div><div class="panel" style="margin-top:16px"><div class="ph"><h2>💾 Backup do aplicativo</h2></div><p class="muted">Exporte alunos, treinos, exercícios, imagens offline, vídeos, pagamentos e configurações. O arquivo pode ser guardado no computador ou em um pendrive.</p><div class="actions"><button class="btn primary" onclick="exportBackup()">⬇️ Fazer backup</button><button class="btn" onclick="document.getElementById('backupFile').click()">⬆️ Restaurar backup</button><input id="backupFile" type="file" accept="application/json,.json" style="display:none" onchange="importBackup(this)"></div><div class="file-note">A restauração substitui os dados atuais pelos dados do arquivo escolhido.</div><div class="file-note" style="margin-top:8px">⚠️ Esta versão GitHub ainda usa o armazenamento local do navegador. Para o aluno abrir o mesmo treino em outro celular/computador, será necessária a etapa online (Supabase).</div></div></section>
 </main></div>
 
 <div id="studentView" class="student-page hidden"><div class="student-wrap">
@@ -660,7 +660,7 @@ function updateTemplatePickerPreview(){const e=db.exercises.find(x=>x.id===Numbe
 function confirmTemplateItem(tid){const t=db.templates.find(x=>x.id===tid),e=db.exercises.find(x=>x.id===Number(document.getElementById('tpick').value));if(!t||!e)return;t.items.push({id:Date.now(),exerciseId:e.id,sets:3,reps:'10',weight:'',rest:'60 s',note:'',demoUrl:e.videoUrl||'',demoTitle:e.videoTitle||''});persist();openTemplateExercises(tid);toast('Exercício adicionado ao modelo.')}
 function editTemplateItem(tid,i,k,v){const t=db.templates.find(x=>x.id===tid);if(t)t.items[i][k]=k==='sets'?Number(v):v;persist()}
 function removeTemplateItem(tid,i){const t=db.templates.find(x=>x.id===tid);if(t){t.items.splice(i,1);persist();openTemplateExercises(tid)}}
-function renderWorkouts(){workoutList.innerHTML=db.workouts.map(w=>{const s=db.students.find(x=>x.id===w.studentId);return `<div class="panel" id="w_${w.id}"><div class="ph"><div><h2>${esc(w.name)}</h2><div class="muted">${esc(s?.name||'Aluno')} ${w.public!==false?'· Publicado':'· Rascunho'}</div></div><div class="actions"><button class="btn primary" onclick="addItem(${w.id})">+ Exercício</button><button class="btn" onclick="saveWorkoutAsTemplate(${w.id})">📋 Salvar como modelo</button></div></div>${w.items.map((it,i)=>{const e=db.exercises.find(x=>x.id===it.exerciseId)||{};return `<div class="exercise-row"><div class="exercise-head"><div><b>${esc(e.name)}</b><div class="muted">${esc(e.muscles||'')}</div></div><div class="actions" style="margin-top:0"><button class="btn sm" onclick="openWorkoutVideo(${w.id},${i})">🎥 VÍDEO PERSONALIZADO</button><button class="btn danger sm" onclick="removeItem(${w.id},${i})">Excluir</button></div></div><div class="exercise-controls"><label>SÉRIES<input type="number" min="1" value="${it.sets}" onchange="editItem(${w.id},${i},'sets',this.value)"></label><label>REPETIÇÕES<input value="${esc(it.reps)}" onchange="editItem(${w.id},${i},'reps',this.value)"></label><label>CARGA<input value="${esc(it.weight)}" placeholder="Ex.: 30 kg" onchange="editItem(${w.id},${i},'weight',this.value)"></label><label>DESCANSO<input value="${esc(it.rest)}" onchange="editItem(${w.id},${i},'rest',this.value)"></label><label>OBSERVAÇÃO<input value="${esc(it.note)}" onchange="editItem(${w.id},${i},'note',this.value)"></label></div></div>`}).join('')||'<div class="muted">Nenhum exercício. Clique em + Exercício.</div>'}<div class="actions"><button class="btn ok" onclick="copyStudentLink(${w.studentId})">🔗 Copiar link do aluno</button><button class="btn" onclick="previewWorkout(${w.studentId})">📱 Ver treino</button><button class="btn danger" onclick="deleteWorkout(${w.id})">Excluir treino</button></div></div>`}).join('')||'<div class="muted">Nenhum treino criado.</div>'}
+function renderWorkouts(){workoutList.innerHTML=db.workouts.map(w=>{const s=db.students.find(x=>x.id===w.studentId);return `<div class="panel" id="w_${w.id}"><div class="ph"><div><h2>${esc(w.name)}</h2><div class="muted">${esc(s?.name||'Aluno')} ${w.public!==false?'· Publicado':'· Rascunho'}</div></div><div class="actions"><button class="btn primary" onclick="addItem(${w.id})">+ Exercício</button><button class="btn" onclick="saveWorkoutAsTemplate(${w.id})">📋 Salvar como modelo</button></div></div>${w.items.map((it,i)=>{const e=db.exercises.find(x=>x.id===it.exerciseId)||{};return `<div class="exercise-row"><div class="exercise-head"><div><b>${esc(e.name)}</b><div class="muted">${esc(e.muscles||'')}</div></div><div class="actions" style="margin-top:0"><button class="btn sm" onclick="openWorkoutVideo(${w.id},${i})">🎥 VÍDEO PERSONALIZADO</button><button class="btn danger sm" onclick="removeItem(${w.id},${i})">Excluir</button></div></div><div class="exercise-controls"><label>SÉRIES<input type="number" min="1" value="${it.sets}" onchange="editItem(${w.id},${i},'sets',this.value)"></label><label>REPETIÇÕES<input value="${esc(it.reps)}" onchange="editItem(${w.id},${i},'reps',this.value)"></label><label>CARGA<input value="${esc(it.weight)}" placeholder="Ex.: 30 kg" onchange="editItem(${w.id},${i},'weight',this.value)"></label><label>DESCANSO<input value="${esc(it.rest)}" onchange="editItem(${w.id},${i},'rest',this.value)"></label><label>OBSERVAÇÃO<input value="${esc(it.note)}" onchange="editItem(${w.id},${i},'note',this.value)"></label></div></div>`}).join('')||'<div class="muted">Nenhum exercício. Clique em + Exercício.</div>'}<div class="actions"><button class="btn ok" onclick="copyStudentLink(${w.studentId})">🔗 Copiar link do aluno</button><button class="btn primary" onclick="previewWorkout(${w.studentId},${w.id})">▶ ABRIR ESTE TREINO NO PAINEL</button><button class="btn" onclick="previewWorkout(${w.studentId},${w.id})">📱 Ver treino</button><button class="btn danger" onclick="deleteWorkout(${w.id})">Excluir treino</button></div></div>`}).join('')||'<div class="muted">Nenhum treino criado.</div>'}
 function removeItem(wid,i){const w=db.workouts.find(x=>x.id===wid);if(w){w.items.splice(i,1);persist();}}
 function editItem(wid,i,k,v){const w=db.workouts.find(x=>x.id===wid);if(w){w.items[i][k]=k==='sets'?Number(v):v;persist();}}
 function openWorkoutVideo(wid,index){const w=db.workouts.find(x=>x.id===wid),it=w?.items[index],e=it?db.exercises.find(x=>x.id===it.exerciseId):null;if(!w||!it||!e)return;const current=it.demoUrl||e.videoUrl||'';const title=it.demoTitle||e.videoTitle||'Demonstração personalizada';openModal('Vídeo personalizado do professor',`<div class="panel" style="margin-top:0"><h2>${esc(e.name)}</h2><p class="muted">Use somente um vídeo escolhido pelo professor. Não há busca automática no YouTube.</p><div class="field"><label>🎥 Link do seu vídeo</label><input id="workoutVideoUrl" value="${esc(current)}" placeholder="Cole o link direto do seu vídeo"></div><div class="field"><label>Título do vídeo</label><input id="workoutVideoTitle" value="${esc(title)}"></div><div class="field"><label>📁 Ou selecione um vídeo MP4 do computador</label><input id="workoutVideoFile" type="file" accept="video/mp4,video/webm,video/*" onchange="previewLocalWorkoutVideo(this)"><div class="file-note">O MP4 pode ser usado como vídeo personalizado local. Arquivos grandes podem ocupar bastante espaço no navegador.</div></div><div id="videoPreview" class="media-preview">${current?`<div class="muted">Vídeo personalizado cadastrado.</div>`:'<span class="muted">Nenhum vídeo cadastrado.</span>'}</div><div class="actions"><button class="btn primary" onclick="saveWorkoutVideo(${wid},${index})">✓ SALVAR VÍDEO PERSONALIZADO</button>${current?`<button class="btn danger" onclick="removeWorkoutVideo(${wid},${index})">Remover vídeo</button>`:''}</div></div>`)}
@@ -716,25 +716,48 @@ function openStudentPanel(){
   const active=db.students.filter(s=>s.active!==false);
   if(!active.length)return alert('Cadastre um aluno primeiro.');
   openModal('Painel do aluno',`<div class="student-picker">
-    <p class="muted">Selecione o aluno para visualizar exatamente o treino que foi lançado para ele.</p>
-    <div id="studentPickerList">${active.map(s=>{const w=getLatestStudentWorkout(s.id);return `<div class="listitem"><div class="grow"><b>${esc(s.name)}</b><div class="muted">${w?`Treino: ${esc(w.name)}`:'Nenhum treino lançado'}</div></div><button class="btn primary sm" onclick="openStudentPanelWorkout(${s.id})">${w?'ABRIR TREINO':'ABRIR PAINEL'}</button></div>`}).join('')}</div>
+    <p class="muted">Escolha o aluno e, em seguida, o treino que deseja visualizar.</p>
+    <div id="studentPickerList">${active.map(s=>{
+      const ws=getStudentWorkouts(s.id).sort((a,b)=>Number(b.id)-Number(a.id));
+      return `<div class="panel" style="margin:10px 0;padding:14px">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+          <div><b style="font-size:17px">${esc(s.name)}</b><div class="muted">${ws.length} treino(s) lançado(s)</div></div>
+          <button class="btn sm" onclick="toggleStudentWorkoutList(${s.id})">Selecionar treino</button>
+        </div>
+        <div id="studentWorkouts_${s.id}" class="hidden" style="margin-top:12px">
+          ${ws.length ? ws.map(w=>`<div class="listitem" style="margin-top:8px">
+            <div class="grow">
+              <b>${esc(w.name||'Treino')}</b>
+              <div class="muted">${(w.items||[]).length} exercício(s) · ${w.public!==false?'Publicado':'Rascunho'}</div>
+            </div>
+            <button class="btn primary sm" onclick="openStudentPanelWorkout(${s.id},${w.id})">ABRIR TREINO</button>
+          </div>`).join('') : '<div class="file-note">Nenhum treino lançado para este aluno.</div>'}
+        </div>
+      </div>`;
+    }).join('')}</div>
   </div>`);
 }
-function openStudentPanelWorkout(studentId){
+function toggleStudentWorkoutList(studentId){
+  const el=document.getElementById('studentWorkouts_'+studentId);
+  if(el)el.classList.toggle('hidden');
+}
+function openStudentPanelWorkout(studentId,workoutId){
   const s=db.students.find(x=>Number(x.id)===Number(studentId));
-  if(!s)return;
-  const w=getLatestStudentWorkout(studentId);
+  const w=db.workouts.find(x=>Number(x.id)===Number(workoutId)&&Number(x.studentId)===Number(studentId));
+  if(!s)return alert('Aluno não encontrado.');
+  if(!w)return alert('Treino não encontrado para este aluno.');
   closeModal();
-  previewWorkout(studentId,w?w.id:null);
+  previewWorkout(studentId,w.id);
 }
 function openStudentPreview(){openStudentPanel()}
 function previewWorkout(id,workoutId=null){
   const s=db.students.find(x=>Number(x.id)===Number(id));
   if(!s)return alert('Aluno não encontrado.');
   const w=workoutId!=null ? (db.workouts||[]).find(x=>Number(x.id)===Number(workoutId)&&Number(x.studentId)===Number(id)) : getLatestStudentWorkout(id);
+  if(!w)return alert('Este aluno ainda não possui treino lançado.');
   teacher.classList.add('hidden');
   studentView.classList.remove('hidden');
-  try{renderStudent(id,w?w.id:null)}catch(err){console.error(err);stContent.innerHTML=`<div class="panel"><h2>Não foi possível abrir o treino</h2><p class="muted">Erro ao carregar o treino. Tente voltar para a área do professor e abrir novamente.</p><pre style="white-space:pre-wrap;font-size:12px">${esc(err.message||err)}</pre></div>`;}
+  try{renderStudent(s.id,w.id)}catch(err){console.error(err);stContent.innerHTML=`<div class="panel"><h2>Não foi possível abrir o treino</h2><p class="muted">Erro ao carregar o treino.</p><pre style="white-space:pre-wrap;font-size:12px">${esc(err.message||err)}</pre></div>`;}
 }
 function closeStudentPreview(){studentView.classList.add('hidden');teacher.classList.remove('hidden')}
 
