@@ -1,0 +1,14 @@
+{
+  "name": "Treino Pesado — Academia Alta Definição HD",
+  "short_name": "Treino Pesado",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef2f5",
+  "theme_color": "#00AEEF",
+  "description": "Aplicativo de treinos da Academia Alta Definição HD.",
+  "icons": [
+    {"src":"./icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"./icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
