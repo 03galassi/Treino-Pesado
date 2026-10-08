@@ -437,7 +437,11 @@ try{
 }catch(e){console.error('Firebase não inicializado:',e);}
 async function cloudSaveStudent(student){
   if(!cloudDb||!student)return;
-  await cloudDb.collection('students').doc(String(student.id)).set({...student,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  const data={...student,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+  await cloudDb.collection('students').doc(String(student.id)).set(data,{merge:true});
+  if(student.token){
+    await cloudDb.collection('students').doc(String(student.token)).set(data,{merge:true});
+  }
 }
 async function cloudSaveWorkout(workout){
   if(!cloudDb||!workout)return;
@@ -448,7 +452,12 @@ async function cloudSaveConfig(config){
   await cloudDb.collection('app').doc('config').set({...config,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
 }
 async function cloudLoadStudent(token){
-  if(!cloudDb)return null;
+  if(!cloudDb||!token)return null;
+  const direct=await cloudDb.collection('students').doc(String(token)).get();
+  if(direct.exists){
+    const d=direct.data();
+    return {id:Number(d.id||direct.id),...d};
+  }
   const snap=await cloudDb.collection('students').where('token','==',String(token)).limit(1).get();
   if(snap.empty)return null;
   return {id:Number(snap.docs[0].data().id||snap.docs[0].id),...snap.docs[0].data()};
@@ -722,7 +731,26 @@ function previewLocalWorkoutVideo(input){const f=input?.files?.[0],box=document.
 function saveWorkoutVideo(wid,index){const w=db.workouts.find(x=>x.id===wid),it=w?.items[index];if(!it)return;const file=document.getElementById('workoutVideoFile')?.files?.[0],raw=document.getElementById('workoutVideoUrl').value.trim();const title=document.getElementById('workoutVideoTitle').value.trim()||'Demonstração personalizada';const done=url=>{it.demoUrl=url;it.demoTitle=title;persist();closeModal();toast('Vídeo personalizado salvo no treino.')};if(file){const r=new FileReader();r.onload=()=>done(r.result);r.readAsDataURL(file)}else if(raw)done(raw);else alert('Cole o link do vídeo ou selecione um arquivo de vídeo.')}
 function removeWorkoutVideo(wid,index){const w=db.workouts.find(x=>x.id===wid),it=w?.items[index];if(!it)return;delete it.demoUrl;delete it.demoTitle;persist();closeModal();toast('Vídeo removido.')}
 function deleteWorkout(id){if(confirm('Excluir este treino?')){db.workouts=db.workouts.filter(w=>w.id!==id);persist();toast('Treino excluído.')}}
-function copyStudentLink(id){const s=db.students.find(x=>Number(x.id)===Number(id));const w=getLatestStudentWorkout(id);if(!s)return;if(!w)return alert('Lance um treino para este aluno antes de copiar o link.');const url=location.href.split('#')[0]+'#aluno='+encodeURIComponent(s.token)+'&treino='+encodeURIComponent(w.id);navigator.clipboard?.writeText(url);toast('Link do treino copiado. O treino liberado no Firebase poderá ser aberto em outro dispositivo.')}
+async function copyStudentLink(id){
+  const s=db.students.find(x=>Number(x.id)===Number(id));
+  const w=getLatestStudentWorkout(id);
+  if(!s)return;
+  if(!w)return alert('Lance um treino para este aluno antes de copiar o link.');
+  w.public=true; w.released=true; w.releasedAt=w.releasedAt||new Date().toISOString();
+  persist();
+  if(cloudDb){
+    try{
+      await cloudSaveStudent(s);
+      await cloudSaveWorkout(w);
+    }catch(err){
+      console.error(err);
+      return alert('Não foi possível publicar o aluno/treino no Firebase.\n\n'+(err.message||err));
+    }
+  }
+  const url=location.href.split('#')[0]+'#aluno='+encodeURIComponent(s.token)+'&treino='+encodeURIComponent(w.id);
+  try{await navigator.clipboard?.writeText(url)}catch(_){}
+  toast('Aluno e treino publicados no Firebase. Link copiado.');
+}
 function renderFinance(){let paid=0,pending=0,late=0;db.students.filter(s=>s.active!==false).forEach(s=>{if(s.fin==='paid')paid+=+s.value;else if(s.fin==='late')late+=+s.value;else pending+=+s.value});fPaid.textContent=money(paid);fPending.textContent=money(pending);fLate.textContent=money(late);fBlocked.textContent=db.students.filter(s=>s.access==='blocked').length;financeTable.innerHTML=db.students.filter(s=>s.active!==false).map(s=>`<tr><td><b>${esc(s.name)}</b></td><td>${esc(s.plan)}</td><td>${money(s.value)}</td><td>Dia ${s.due}</td><td><span class="badge ${s.fin==='paid'?'ok':s.fin==='late'?'bad':'warn'}">${s.fin==='paid'?'PAGO':s.fin==='late'?'ATRASADO':'PENDENTE'}</span></td><td><button class="btn ok sm" onclick="setFin(${s.id},'paid')">✓ Recebido</button><button class="btn sm" onclick="setFin(${s.id},'pending')">Pendente</button><button class="btn danger sm" onclick="setFin(${s.id},'late')">Atrasado</button></td></tr>`).join('')}
 function setFin(id,status){db.students.find(s=>s.id===id).fin=status;persist();toast('Status financeiro atualizado.')}
 
@@ -1018,7 +1046,7 @@ async function route(){
     if(!s) s=db.students.find(x=>String(x.token)===String(token));
     if(s&&!w) w=workoutId ? (db.workouts||[]).find(x=>Number(x.id)===Number(workoutId)&&Number(x.studentId)===Number(s.id)) : getLatestStudentWorkout(s.id);
     if(!s){
-      stContent.innerHTML='<div class="panel"><h2>Aluno não encontrado</h2><p class="muted">O link foi aberto, mas o aluno ainda não está cadastrado no Firebase.</p></div>';
+      stContent.innerHTML='<div class="panel"><h2>Aluno não encontrado</h2><p class="muted">Este link não encontrou o cadastro no Firebase. No painel do professor, clique novamente em <b>📤 ENVIAR TREINO PARA O ALUNO</b> ou em <b>🔗 Copiar link do aluno</b> para publicar o cadastro e gerar um novo link.</p></div>';
       return;
     }
     if(s.access==='blocked'){
