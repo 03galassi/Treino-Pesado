@@ -416,6 +416,60 @@ a{color:#087ebc}
 }
 </style>
 
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyA8X_WcNY7iNLChHiP9WfYBq-aODV75gTw",
+  authDomain: "treino-pesado-7f2ce.firebaseapp.com",
+  projectId: "treino-pesado-7f2ce",
+  storageBucket: "treino-pesado-7f2ce.firebasestorage.app",
+  messagingSenderId: "759160073738",
+  appId: "1:759160073738:web:79409c2377097c89c79f3",
+  measurementId: "G-RCMD59069H"
+};
+let firebaseApp=null, cloudDb=null;
+try{
+  firebaseApp=firebase.initializeApp(firebaseConfig);
+  cloudDb=firebase.firestore();
+  console.log('Firebase conectado:', firebaseConfig.projectId);
+}catch(e){console.error('Firebase não inicializado:',e);}
+async function cloudSaveStudent(student){
+  if(!cloudDb||!student)return;
+  await cloudDb.collection('students').doc(String(student.id)).set({...student,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+}
+async function cloudSaveWorkout(workout){
+  if(!cloudDb||!workout)return;
+  await cloudDb.collection('workouts').doc(String(workout.id)).set({...workout,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+}
+async function cloudSaveConfig(config){
+  if(!cloudDb)return;
+  await cloudDb.collection('app').doc('config').set({...config,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+}
+async function cloudLoadStudent(token){
+  if(!cloudDb)return null;
+  const snap=await cloudDb.collection('students').where('token','==',String(token)).limit(1).get();
+  if(snap.empty)return null;
+  return {id:Number(snap.docs[0].data().id||snap.docs[0].id),...snap.docs[0].data()};
+}
+async function cloudLoadWorkout(studentId,workoutId){
+  if(!cloudDb)return null;
+  if(workoutId){
+    const d=await cloudDb.collection('workouts').doc(String(workoutId)).get();
+    if(d.exists){const w={id:Number(d.data().id||d.id),...d.data()};if(Number(w.studentId)===Number(studentId))return w;}
+  }
+  const snap=await cloudDb.collection('workouts').where('studentId','==',Number(studentId)).where('public','==',true).limit(20).get();
+  if(snap.empty)return null;
+  const arr=snap.docs.map(d=>({id:Number(d.data().id||d.id),...d.data()})).sort((a,b)=>Number(b.id)-Number(a.id));
+  return arr[0]||null;
+}
+async function cloudLoadConfig(){
+  if(!cloudDb)return null;
+  const d=await cloudDb.collection('app').doc('config').get();
+  return d.exists?d.data():null;
+}
+</script>
 </head>
 <!-- Academia Alta Definição HD - GitHub Pages ready. Single-file offline prototype. -->
 <body>
@@ -458,7 +512,7 @@ a{color:#087ebc}
 <div class="field"><label>Nome profissional</label><input id="cfgName"></div><div class="field"><label>Nome da empresa/academia</label><input id="cfgCompany"></div>
 <div class="field"><label>WhatsApp</label><input id="cfgPhone"></div><div class="field"><label>Instagram</label><input id="cfgInstagram"></div>
 <div class="field"><label>Cor principal</label><input id="cfgColor" type="color"></div><div class="field"><label>Texto no topo do aluno</label><input id="cfgWelcome"></div>
-<div class="field full"><label>Observação / apresentação</label><textarea id="cfgBio"></textarea></div></div><div class="actions"><button class="btn primary" onclick="saveConfig()">Salvar identidade</button></div></div><div class="panel" style="margin-top:16px"><div class="ph"><h2>💾 Backup do aplicativo</h2></div><p class="muted">Exporte alunos, treinos, exercícios, imagens offline, vídeos, pagamentos e configurações. O arquivo pode ser guardado no computador ou em um pendrive.</p><div class="actions"><button class="btn primary" onclick="exportBackup()">⬇️ Fazer backup</button><button class="btn" onclick="document.getElementById('backupFile').click()">⬆️ Restaurar backup</button><input id="backupFile" type="file" accept="application/json,.json" style="display:none" onchange="importBackup(this)"></div><div class="file-note">A restauração substitui os dados atuais pelos dados do arquivo escolhido.</div><div class="file-note" style="margin-top:8px">⚠️ Esta versão GitHub ainda usa o armazenamento local do navegador. Para o aluno abrir o mesmo treino em outro celular/computador, será necessária a etapa online (Supabase).</div></div></section>
+<div class="field full"><label>Observação / apresentação</label><textarea id="cfgBio"></textarea></div></div><div class="actions"><button class="btn primary" onclick="saveConfig()">Salvar identidade</button></div></div><div class="panel" style="margin-top:16px"><div class="ph"><h2>☁️ Firebase</h2></div><p class="muted">Projeto conectado: <b>Treino Pesado</b>. O botão <b>📤 ENVIAR TREINO PARA O ALUNO</b> grava o aluno e o treino no Firestore.</p></div><div class="panel" style="margin-top:16px"><div class="ph"><h2>💾 Backup do aplicativo</h2></div><p class="muted">Exporte alunos, treinos, exercícios, imagens offline, vídeos, pagamentos e configurações. O arquivo pode ser guardado no computador ou em um pendrive.</p><div class="actions"><button class="btn primary" onclick="exportBackup()">⬇️ Fazer backup</button><button class="btn" onclick="document.getElementById('backupFile').click()">⬆️ Restaurar backup</button><input id="backupFile" type="file" accept="application/json,.json" style="display:none" onchange="importBackup(this)"></div><div class="file-note">A restauração substitui os dados atuais pelos dados do arquivo escolhido.</div><div class="file-note" style="margin-top:8px">⚠️ Esta versão GitHub ainda usa o armazenamento local do navegador. Para o aluno abrir o mesmo treino em outro celular/computador, o treino deve ser enviado pelo botão 📤 ENVIAR TREINO PARA O ALUNO.</div></div></section>
 </main></div>
 
 <div id="studentView" class="student-page hidden"><div class="student-wrap">
@@ -668,7 +722,7 @@ function previewLocalWorkoutVideo(input){const f=input?.files?.[0],box=document.
 function saveWorkoutVideo(wid,index){const w=db.workouts.find(x=>x.id===wid),it=w?.items[index];if(!it)return;const file=document.getElementById('workoutVideoFile')?.files?.[0],raw=document.getElementById('workoutVideoUrl').value.trim();const title=document.getElementById('workoutVideoTitle').value.trim()||'Demonstração personalizada';const done=url=>{it.demoUrl=url;it.demoTitle=title;persist();closeModal();toast('Vídeo personalizado salvo no treino.')};if(file){const r=new FileReader();r.onload=()=>done(r.result);r.readAsDataURL(file)}else if(raw)done(raw);else alert('Cole o link do vídeo ou selecione um arquivo de vídeo.')}
 function removeWorkoutVideo(wid,index){const w=db.workouts.find(x=>x.id===wid),it=w?.items[index];if(!it)return;delete it.demoUrl;delete it.demoTitle;persist();closeModal();toast('Vídeo removido.')}
 function deleteWorkout(id){if(confirm('Excluir este treino?')){db.workouts=db.workouts.filter(w=>w.id!==id);persist();toast('Treino excluído.')}}
-function copyStudentLink(id){const s=db.students.find(x=>Number(x.id)===Number(id));const w=getLatestStudentWorkout(id);if(!s)return;if(!w)return alert('Lance um treino para este aluno antes de copiar o link.');const url=location.href.split('#')[0]+'#aluno='+encodeURIComponent(s.token)+'&treino='+encodeURIComponent(w.id);navigator.clipboard?.writeText(url);toast('Link do treino copiado. No modo offline, ele precisa ser aberto no mesmo dispositivo/navegador que possui os dados.')}
+function copyStudentLink(id){const s=db.students.find(x=>Number(x.id)===Number(id));const w=getLatestStudentWorkout(id);if(!s)return;if(!w)return alert('Lance um treino para este aluno antes de copiar o link.');const url=location.href.split('#')[0]+'#aluno='+encodeURIComponent(s.token)+'&treino='+encodeURIComponent(w.id);navigator.clipboard?.writeText(url);toast('Link do treino copiado. O treino liberado no Firebase poderá ser aberto em outro dispositivo.')}
 function renderFinance(){let paid=0,pending=0,late=0;db.students.filter(s=>s.active!==false).forEach(s=>{if(s.fin==='paid')paid+=+s.value;else if(s.fin==='late')late+=+s.value;else pending+=+s.value});fPaid.textContent=money(paid);fPending.textContent=money(pending);fLate.textContent=money(late);fBlocked.textContent=db.students.filter(s=>s.access==='blocked').length;financeTable.innerHTML=db.students.filter(s=>s.active!==false).map(s=>`<tr><td><b>${esc(s.name)}</b></td><td>${esc(s.plan)}</td><td>${money(s.value)}</td><td>Dia ${s.due}</td><td><span class="badge ${s.fin==='paid'?'ok':s.fin==='late'?'bad':'warn'}">${s.fin==='paid'?'PAGO':s.fin==='late'?'ATRASADO':'PENDENTE'}</span></td><td><button class="btn ok sm" onclick="setFin(${s.id},'paid')">✓ Recebido</button><button class="btn sm" onclick="setFin(${s.id},'pending')">Pendente</button><button class="btn danger sm" onclick="setFin(${s.id},'late')">Atrasado</button></td></tr>`).join('')}
 function setFin(id,status){db.students.find(s=>s.id===id).fin=status;persist();toast('Status financeiro atualizado.')}
 
@@ -713,15 +767,24 @@ function importBackup(input){
 function saveConfig(){db.config={name:cfgName.value||'Personal Manager',company:cfgCompany.value,phone:cfgPhone.value,instagram:cfgInstagram.value,color:cfgColor.value,welcome:cfgWelcome.value,bio:cfgBio.value};persist();toast('Identidade atualizada.')}
 function loadConfig(){cfgName.value=db.config.name;cfgCompany.value=db.config.company;cfgPhone.value=db.config.phone;cfgInstagram.value=db.config.instagram;cfgColor.value=db.config.color;cfgWelcome.value=db.config.welcome;cfgBio.value=db.config.bio}
 
-function releaseWorkout(workoutId){
+async function releaseWorkout(workoutId){
   const w=(db.workouts||[]).find(x=>Number(x.id)===Number(workoutId));
-  if(!w)return alert('Treino não encontrado.');
+  const student=w ? db.students.find(x=>Number(x.id)===Number(w.studentId)) : null;
+  if(!w||!student)return alert('Aluno ou treino não encontrado.');
   w.public=true;
   w.released=true;
   w.releasedAt=new Date().toISOString();
-  save();
-  render();
-  alert('Treino liberado para o aluno.\\n\\nNesta versão offline, a liberação fica registrada no aplicativo. A sincronização com o celular do aluno será ativada quando conectarmos o banco online.');
+  persist();
+  if(!cloudDb)return alert('Treino liberado apenas neste navegador. Firebase não está conectado.');
+  try{
+    await cloudSaveStudent(student);
+    await cloudSaveWorkout(w);
+    await cloudSaveConfig(db.config);
+    toast('Treino enviado para o Firebase e liberado para o aluno.');
+  }catch(err){
+    console.error(err);
+    alert('O treino foi marcado como liberado localmente, mas não foi enviado ao Firebase.\n\n'+(err.message||err));
+  }
 }
 function revokeWorkout(workoutId){
   const w=(db.workouts||[]).find(x=>Number(x.id)===Number(workoutId));
@@ -858,7 +921,7 @@ function renderStudent(id,workoutId=null){
   const logo_uri = document.querySelector('.brand-photo')?.src || '';
   window.currentStudentId=id;
   window.currentWorkoutId=workoutId;
-  const s=db.students.find(x=>x.id===id);
+  const s=(window.cloudStudent&&Number(window.cloudStudent.id)===Number(id))?window.cloudStudent:db.students.find(x=>x.id===id);
   if(!s)return;
   stBrand.textContent=db.config.company||db.config.name||'Academia Alta Definição HD';
   stHello.textContent=`Olá, ${s.name.split(' ')[0]}! 👋`;
@@ -870,7 +933,7 @@ function renderStudent(id,workoutId=null){
   }
 
   // Usa o treino mais recente publicado/cadastrado para este aluno.
-  const w=(workoutId!=null ? (db.workouts||[]).find(x=>Number(x.id)===Number(workoutId)&&Number(x.studentId)===Number(id)&&x.public!==false) : getLatestStudentWorkout(id));
+  const w=(window.cloudWorkout&&Number(window.cloudWorkout.id)===Number(workoutId))?window.cloudWorkout:(workoutId!=null ? (db.workouts||[]).find(x=>Number(x.id)===Number(workoutId)&&Number(x.studentId)===Number(id)&&x.public!==false) : getLatestStudentWorkout(id));
 
   if(!w){
     stContent.innerHTML='<div class="panel"><h2>Nenhum treino publicado</h2><p>Seu professor ainda não publicou um treino.</p></div>';
@@ -939,21 +1002,40 @@ function renderStudent(id,workoutId=null){
   showStudentExercise(0);
 }
 
-function route(){
+async function route(){
   const h=location.hash||'';
   if(!h.startsWith('#aluno='))return;
   const params=new URLSearchParams(h.substring(1));
   const token=params.get('aluno');
   const workoutId=params.get('treino');
-  const s=db.students.find(x=>String(x.token)===String(token));
-  if(!s){
-    teacher.classList.add('hidden');studentView.classList.remove('hidden');
-    stContent.innerHTML='<div class="panel"><h2>Aluno não encontrado neste dispositivo</h2><p class="muted">Este protótipo offline guarda os dados no navegador onde o cadastro foi feito. Para outro aparelho, será necessário importar o backup ou usar a versão online.</p></div>';
-    return;
-  }
-  const w=workoutId ? (db.workouts||[]).find(x=>Number(x.id)===Number(workoutId)&&Number(x.studentId)===Number(s.id)) : getLatestStudentWorkout(s.id);
   teacher.classList.add('hidden');studentView.classList.remove('hidden');
-  try{renderStudent(s.id,w?w.id:null)}catch(err){console.error(err);stContent.innerHTML=`<div class="panel"><h2>Erro ao abrir o treino</h2><p class="muted">${esc(err.message||err)}</p></div>`;}
+  stContent.innerHTML='<div class="panel"><h2>Carregando seu treino...</h2><p class="muted">Conectando ao treino da Academia Alta Definição HD.</p></div>';
+  try{
+    let s=await cloudLoadStudent(token);
+    let w=null;
+    if(s) w=await cloudLoadWorkout(s.id,workoutId);
+    // fallback local, useful when testing on the same browser
+    if(!s) s=db.students.find(x=>String(x.token)===String(token));
+    if(s&&!w) w=workoutId ? (db.workouts||[]).find(x=>Number(x.id)===Number(workoutId)&&Number(x.studentId)===Number(s.id)) : getLatestStudentWorkout(s.id);
+    if(!s){
+      stContent.innerHTML='<div class="panel"><h2>Aluno não encontrado</h2><p class="muted">O link foi aberto, mas o aluno ainda não está cadastrado no Firebase.</p></div>';
+      return;
+    }
+    if(s.access==='blocked'){
+      stContent.innerHTML='<div class="panel"><h2>🔒 Acesso bloqueado</h2><p>Seu acesso está temporariamente indisponível. Entre em contato com seu professor.</p></div>';
+      return;
+    }
+    if(!w){
+      stContent.innerHTML='<div class="panel"><h2>Nenhum treino publicado</h2><p class="muted">Seu professor ainda não enviou um treino para este link.</p></div>';
+      return;
+    }
+    // Keep cloud data available to the renderer without replacing the professor's local database.
+    window.cloudStudent=s; window.cloudWorkout=w;
+    renderStudent(s.id,w.id);
+  }catch(err){
+    console.error(err);
+    stContent.innerHTML=`<div class="panel"><h2>Não foi possível carregar o treino</h2><p class="muted">${esc(err.message||err)}</p></div>`;
+  }
 }
 seedRichExercises();renderAll();route();
 </script>
