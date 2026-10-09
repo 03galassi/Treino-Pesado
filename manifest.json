@@ -1,24 +1,9 @@
 {
   "name": "Treino Pesado",
   "short_name": "Treino Pesado",
-  "start_url": "./index.html",
-  "scope": "./",
+  "start_url": "./",
   "display": "standalone",
-  "background_color": "#f4f7fa",
-  "theme_color": "#00AEEF",
-  "lang": "pt-BR",
-  "icons": [
-    {
-      "src": "./icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "./icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ]
+  "background_color": "#f5f7f9",
+  "theme_color": "#168cff",
+  "description": "Gestão de alunos e treinos para personal trainer"
 }
