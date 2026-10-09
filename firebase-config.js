@@ -1,5 +1,3 @@
-// Configuração Firebase do projeto Treino Pesado.
-// V1 já está preparada para o projeto informado.
 export const firebaseConfig = {
   apiKey: "AIzaSyA8X_WcNY7yINLChHiP9WFYBq-aODV75gTw",
   authDomain: "treino-pesado-7f2ce.firebaseapp.com",

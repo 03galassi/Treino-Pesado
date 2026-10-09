@@ -1,9 +1,8 @@
 {
-  "name": "Treino Pesado",
-  "short_name": "Treino Pesado",
-  "start_url": "./",
-  "display": "standalone",
-  "background_color": "#f5f7f9",
-  "theme_color": "#168cff",
-  "description": "Gestão de alunos e treinos para personal trainer"
+  "name":"Treino Pesado",
+  "short_name":"Treino Pesado",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#f3f5f7",
+  "theme_color":"#0b84ff"
 }

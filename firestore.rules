@@ -1,19 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // V1 de desenvolvimento.
-    // IMPORTANTE: antes de uso público, substitua por regras com Firebase Authentication
-    // e controle de acesso por professor/academia.
-    match /students/{studentId} {
-      allow read, write: if true;
-    }
-    match /exercises/{id} {
-      allow read, write: if true;
-    }
-    match /templates/{id} {
-      allow read, write: if true;
-    }
-    match /payments/{id} {
+    match /{document=**} {
       allow read, write: if true;
     }
   }
