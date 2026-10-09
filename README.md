@@ -50,3 +50,6 @@ As regras fornecidas são somente para desenvolvimento. Não publique em produç
 - geração de link/QR Code;
 - instalação PWA guiada para o aluno;
 - relatórios financeiros e histórico.
+
+## Alteração desta revisão
+Na guia ALUNOS, o botão TREINO abre a **edição do treino do aluno**. O professor pode usar um modelo, alterar exercícios/séries/repetições/carga/descanso/observações e clicar em **ENVIAR TREINO**. A imagem `assets/hero-treino.webp` é usada como capa do editor.

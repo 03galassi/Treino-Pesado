@@ -224,25 +224,121 @@ window.studentHome=(id)=>{const s=state.students.find(x=>x.id===id);modal(`<div 
 
 window.assignWorkout=(id)=>{
  const s=state.students.find(x=>x.id===id);
- modal(`<div class="modal-card"><div class="modal-head"><h2>ESCOLHER TREINO PARA ${esc(s.name)}</h2><button onclick="closeModal()">×</button></div>
- <p class="modal-help">Escolha um modelo. Ele será COPIADO para o aluno; alterações posteriores não mexem no modelo original.</p>
- <div class="choice-list">${state.templates.map(t=>`<button onclick="window.applyTemplate('${id}','${t.id}')"><b>${esc(t.name)}</b><span>${t.exercises?.length||0} exercícios</span></button>`).join("")||`<div class="empty">Nenhum modelo disponível.</div>`}</div>
- <button class="outline wide" onclick="window.studentWorkoutEditor('${id}')">CRIAR DO ZERO</button></div>`);
+ const current=s.workout||{id:uid("wrk"),name:"Novo treino",description:"",exercises:[]};
+ modal(`<div class="modal-card workout-modal"><div class="workout-hero">
+   <img src="./assets/hero-treino.webp" alt="">
+   <div class="workout-hero-overlay"><span>EDIÇÃO DE TREINO</span><h2>${esc(s.name)}</h2><p>O que for salvo aqui será o treino enviado para este aluno.</p></div>
+   <button class="hero-close" onclick="closeModal()">×</button>
+ </div>
+ <div class="workout-editor-head">
+   <div><b>MONTAR TREINO DO ALUNO</b><small>Você está editando o treino dele, não a tela do aluno.</small></div>
+   <button class="outline" onclick="window.loadModelIntoStudent('${id}')">USAR MODELO</button>
+ </div>
+ <form onsubmit="window.saveAndSendStudentWorkout(event,'${id}')">
+   <label>Nome do treino<input name="name" value="${esc(current.name)}" required></label>
+   <label>Descrição<textarea name="description">${esc(current.description||"")}</textarea></label>
+   <div class="editor-section-title">EXERCÍCIOS DO TREINO</div>
+   <div id="studentWorkoutExercises" class="student-workout-exercises">
+     ${renderStudentWorkoutExercises(current.exercises||[])}
+   </div>
+   <button type="button" class="add-exercise" onclick="window.addStudentExercise('${id}')">+ ADICIONAR EXERCÍCIO</button>
+   <div class="editor-bottom">
+     <button type="button" class="outline" onclick="closeModal()">FECHAR</button>
+     <button type="submit" class="primary">ENVIAR TREINO</button>
+   </div>
+ </form></div>`);
 };
-window.applyTemplate=async(studentId,templateId)=>{
- const s=state.students.find(x=>x.id===studentId), t=state.templates.find(x=>x.id===templateId);
- const workout={id:uid("wrk"),name:t.name,description:t.description||"",exercises:JSON.parse(JSON.stringify(t.exercises||[])),public:false,createdAt:Date.now()};
- s.workoutId=workout.id;s.workout=workout;saveLocal();await cloudSet("students",s.id,s);closeModal();render();toast("Treino copiado para o aluno");
+function renderStudentWorkoutExercises(items){
+ return items.map((x,i)=>`
+ <div class="student-exercise-edit" data-index="${i}">
+   <div class="student-exercise-title">
+     <div><span>${String(i+1).padStart(2,"0")}</span><b>${esc(x.name||"Exercício")}</b></div>
+     <button type="button" class="remove-exercise" onclick="this.closest('.student-exercise-edit').remove()">REMOVER</button>
+   </div>
+   <input type="hidden" name="exerciseId" value="${esc(x.exerciseId||"")}">
+   <input type="hidden" name="exerciseName" value="${esc(x.name||"")}">
+   <div class="exercise-edit-grid">
+     <label>SÉRIES<input name="sets" type="number" min="1" value="${esc(x.sets||3)}"></label>
+     <label>REPETIÇÕES<input name="reps" type="text" value="${esc(x.reps||10)}"></label>
+     <label>CARGA<input name="load" type="text" value="${esc(x.load||"")}"></label>
+     <label>DESCANSO<input name="rest" type="text" value="${esc(x.rest||"60s")}"></label>
+   </div>
+   <label>OBSERVAÇÃO<textarea name="notes" rows="2">${esc(x.notes||"")}</textarea></label>
+ </div>`).join("");
+}
+window.loadModelIntoStudent=(studentId)=>{
+ const s=state.students.find(x=>x.id===studentId);
+ modal(`<div class="modal-card"><div class="modal-head"><h2>USAR MODELO DE TREINO</h2><button onclick="closeModal()">×</button></div>
+ <p class="modal-help">O modelo será copiado para a edição deste aluno. O original permanecerá intacto.</p>
+ <div class="choice-list">${state.templates.map(t=>`<button type="button" onclick="window.applyModelAndEdit('${studentId}','${t.id}')"><b>${esc(t.name)}</b><span>${t.exercises?.length||0} exercícios</span></button>`).join("")||`<div class="empty">Nenhum modelo disponível.</div>`}</div></div>`);
 };
-window.studentWorkoutEditor=(id)=>{
- const s=state.students.find(x=>x.id===id);
- const current=s.workout||{id:uid("wrk"),name:"Treino personalizado",description:"",exercises:[]};
- modal(`<div class="modal-card wide-modal"><div class="modal-head"><h2>TREINO — ${esc(s.name)}</h2><button onclick="closeModal()">×</button></div>
- <form onsubmit="window.saveStudentWorkout(event,'${id}')"><label>Nome do treino<input name="name" value="${esc(current.name)}" required></label><label>Descrição<textarea name="description">${esc(current.description||"")}</textarea></label>
- <div class="workout-editor">${state.exercises.map(e=>`<label class="exercise-check"><input type="checkbox" name="ex" value="${e.id}" ${(current.exercises||[]).some(x=>x.exerciseId===e.id)?"checked":""}><span><b>${esc(e.name)}</b><small>${esc(e.muscle||"")}</small></span></label>`).join("")||`<div class="empty">Cadastre exercícios primeiro.</div>`}</div>
- <button class="primary wide">SALVAR TREINO DO ALUNO</button></form></div>`);
+window.applyModelAndEdit=(studentId,templateId)=>{
+ const t=state.templates.find(x=>x.id===templateId);
+ const s=state.students.find(x=>x.id===studentId);
+ if(!t||!s)return;
+ s._draftWorkout={id:uid("wrk"),name:t.name,description:t.description||"",exercises:JSON.parse(JSON.stringify(t.exercises||[]))};
+ closeModal();
+ window.assignWorkout(studentId);
+ setTimeout(()=>{
+   const form=document.querySelector(".workout-modal form");
+   if(form){
+     form.querySelector('[name="name"]').value=s._draftWorkout.name;
+     form.querySelector('[name="description"]').value=s._draftWorkout.description;
+     document.querySelector("#studentWorkoutExercises").innerHTML=renderStudentWorkoutExercises(s._draftWorkout.exercises);
+   }
+ },20);
 };
-window.saveStudentWorkout=async(ev,id)=>{ev.preventDefault();const s=state.students.find(x=>x.id===id),f=new FormData(ev.target),ids=f.getAll("ex");const old=s.workout||{};s.workout={id:old.id||uid("wrk"),name:f.get("name"),description:f.get("description"),exercises:ids.map(exerciseId=>{const e=state.exercises.find(x=>x.id===exerciseId);return {exerciseId,name:e.name,muscle:e.muscle||"",image:e.image||"",video:e.video||"",sets:3,reps:10,load:"",rest:"60s",notes:""};}),public:false,updatedAt:Date.now()};s.workoutId=s.workout.id;saveLocal();await cloudSet("students",s.id,s);closeModal();render();toast("Treino salvo");};
+window.addStudentExercise=(studentId)=>{
+ const wrap=document.querySelector("#studentWorkoutExercises");
+ const available=state.exercises.filter(e=>![...wrap.querySelectorAll('[name="exerciseId"]')].map(x=>x.value).includes(e.id));
+ if(!available.length){toast("Todos os exercícios cadastrados já foram adicionados");return;}
+ const options=available.map(e=>`<option value="${esc(e.id)}">${esc(e.name)}</option>`).join("");
+ const temp=document.createElement("div");
+ temp.innerHTML=`<div class="student-exercise-edit new-exercise">
+   <div class="student-exercise-title"><div><span>+</span><b>NOVO EXERCÍCIO</b></div><button type="button" class="remove-exercise" onclick="this.closest('.student-exercise-edit').remove()">REMOVER</button></div>
+   <label>EXERCÍCIO<select class="new-exercise-select">${options}</select></label>
+   <div class="exercise-edit-grid"><label>SÉRIES<input class="new-sets" type="number" min="1" value="3"></label><label>REPETIÇÕES<input class="new-reps" value="10"></label><label>CARGA<input class="new-load"></label><label>DESCANSO<input class="new-rest" value="60s"></label></div>
+   <label>OBSERVAÇÃO<textarea class="new-notes" rows="2"></textarea></label>
+ </div>`;
+ wrap.appendChild(temp.firstElementChild);
+};
+window.saveAndSendStudentWorkout=async(ev,id)=>{
+ ev.preventDefault();
+ const s=state.students.find(x=>x.id===id), form=ev.target, data=new FormData(form);
+ const rows=[...document.querySelectorAll(".student-exercise-edit")];
+ const exercises=[];
+ for(const row of rows){
+   let exerciseId=row.querySelector('[name="exerciseId"]')?.value;
+   if(!exerciseId){
+     exerciseId=row.querySelector(".new-exercise-select")?.value;
+   }
+   const e=state.exercises.find(x=>x.id===exerciseId);
+   if(!e) continue;
+   exercises.push({
+     exerciseId:e.id,name:e.name,muscle:e.muscle||"",image:e.image||"",video:e.video||"",
+     sets:Number(row.querySelector('[name="sets"]')?.value || row.querySelector(".new-sets")?.value || 3),
+     reps:row.querySelector('[name="reps"]')?.value || row.querySelector(".new-reps")?.value || 10,
+     load:row.querySelector('[name="load"]')?.value || row.querySelector(".new-load")?.value || "",
+     rest:row.querySelector('[name="rest"]')?.value || row.querySelector(".new-rest")?.value || "60s",
+     notes:row.querySelector('[name="notes"]')?.value || row.querySelector(".new-notes")?.value || ""
+   });
+ }
+ s.workout={
+   id:s.workout?.id||uid("wrk"),
+   name:data.get("name"),
+   description:data.get("description"),
+   exercises,
+   public:true,
+   released:true,
+   updatedAt:Date.now()
+ };
+ s.workoutId=s.workout.id;
+ saveLocal();
+ await cloudSet("students",s.id,s);
+ closeModal();
+ render();
+ toast("Treino salvo e enviado para "+s.name);
+};
 
 window.studentLink=(id)=>{
  const s=state.students.find(x=>x.id===id);if(!s.token)s.token=crypto.randomUUID();
